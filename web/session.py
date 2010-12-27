@@ -3,7 +3,7 @@ Session Management
 (from web.py)
 """
 
-import os, time, datetime, random, base64
+import os, time, datetime, random, base64, threading
 try:
     import cPickle as pickle
 except ImportError:
@@ -194,6 +194,7 @@ class DiskStore(Store):
         if not os.path.exists(root):
             os.mkdir(root)
         self.root = root
+        self.lock = threading.Lock()
 
     def _get_path(self, key):
         if os.path.sep in key: 
@@ -206,15 +207,20 @@ class DiskStore(Store):
 
     def __getitem__(self, key):
         path = self._get_path(key)
-        if os.path.exists(path): 
-            pickled = open(path).read()
-            return self.decode(pickled)
-        else:
-            raise KeyError, key
+        self.lock.acquire()
+        try:
+            if os.path.exists(path): 
+                pickled = open(path).read()
+                return self.decode(pickled)
+            else:
+                raise KeyError, key
+        finally:
+            self.lock.release()
 
     def __setitem__(self, key, value):
         path = self._get_path(key)
         pickled = self.encode(value)    
+        self.lock.acquire()
         try:
             f = open(path, 'w')
             try:
@@ -223,6 +229,8 @@ class DiskStore(Store):
                 f.close()
         except IOError:
             pass
+        finally:
+            self.lock.release()
 
     def __delitem__(self, key):
         path = self._get_path(key)
