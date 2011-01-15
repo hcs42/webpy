@@ -1471,6 +1471,14 @@ class CherryPyWSGIServer(object):
     version = "CherryPy/3.1.2"
     ready = False
     _interrupt = None
+
+    # ready_callbacks is list of callback functions with no arguments that are
+    # called when the server is started.
+    #
+    # It is ugly to put this variable here. I wanted to do dependency injection
+    # first, but that would have been problematic as well, because
+    # application.wsgifunc is defined as `wsgifunc(self, *middleware)`.
+    ready_callbacks = []
     
     nodelay = True
     
@@ -1602,6 +1610,10 @@ class CherryPyWSGIServer(object):
         # Create worker threads
         self.requests.start()
         
+        # Call callbacks
+        for r in CherryPyWSGIServer.ready_callbacks:
+            r()
+
         self.ready = True
         while self.ready:
             self.tick()
