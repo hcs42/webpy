@@ -129,6 +129,11 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
     print "http://%s:%d/" % server_address
     WSGIServer(func, server_address).serve_forever()
 
+web_logs = []
+
+def print_web_logs():
+    print '\n'.join(web_logs)
+
 def runsimple(func, server_address=("0.0.0.0", 8080)):
     """
     Runs [CherryPy][cp] WSGI server hosting WSGI app `func`. 
@@ -141,7 +146,7 @@ def runsimple(func, server_address=("0.0.0.0", 8080)):
     
     server = WSGIServer(server_address, func)
 
-    print "http://%s:%d/" % server_address
+    web_logs.append("http://%s:%d/" % server_address)
     try:
         server.start()
     except KeyboardInterrupt:
